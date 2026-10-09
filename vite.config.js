@@ -1,0 +1,1 @@
+import {defineConfig} from "vite";export default defineConfig({server:{port:5173,proxy:{"/api":{target:process.env.ENGINE_INTERNAL_URL||"http://localhost:4000",changeOrigin:true,rewrite:p=>p.replace(/^\/api/,""),configure(proxy){proxy.on("proxyReq",r=>{if(process.env.ENGINE_API_KEY)r.setHeader("Authorization","Bearer "+process.env.ENGINE_API_KEY)})}}}},build:{outDir:"dist"}})
