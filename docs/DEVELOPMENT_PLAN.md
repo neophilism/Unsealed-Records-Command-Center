@@ -1,3 +1,5 @@
+> **Canonical PR plan:** [`registry/roadmap.json`](../registry/roadmap.json). The full original plan follows for scope details; update all new PR work/counts in the canonical file.
+
 # Unsealed Records Command Center — complete recovered development plan and cross-account handoff
 
 **Recovery source:** October 9, 2026 project conversation plus [original PR roadmap](https://github.com/neophilism/Unsealed-Records-Command-Center/blob/feature/phase-1-foundation/docs/roadmap.md). The first 15 milestone scopes were preserved, plus approved **item 16** for multi-label/family reporting. Milestone IDs are not GitHub PR numbers. Descriptive scopes/acceptance below supplement the original source, not verbatim quoted chat.
