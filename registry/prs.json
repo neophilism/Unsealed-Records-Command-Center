@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "repository": "neophilism/Unsealed-Records-Command-Center",
+  "roadmapVersion": 1,
+  "planVerified": true,
+  "plannedPrCount": 16,
+  "observedAt": "2026-10-11T17:41:04.850Z",
+  "units": [
+    {
+      "id": "URC-01",
+      "title": "Responsive premium dashboard foundation",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-02",
+      "title": "Production backend-for-frontend and identity",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-03",
+      "title": "Production deployment and routing",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-04",
+      "title": "Label catalog identity",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-05",
+      "title": "Streaming insights",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-06",
+      "title": "Storefront sales dashboards",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-07",
+      "title": "TooLost statement drill-down",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-08",
+      "title": "Stems White Label commerce",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-09",
+      "title": "TrackZero speaker contributions",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-10",
+      "title": "SceneSignal event/session insights",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-11",
+      "title": "Event calendar/QR street launches",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-12",
+      "title": "Artist portfolio and royalties",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-13",
+      "title": "Goals, anomaly alerts and source health",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-14",
+      "title": "Drill-downs, exports and audit",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-15",
+      "title": "Roles, mobile quality and production acceptance",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "URC-16",
+      "title": "Added label/family/all-label scopes and platform views (approved additional scope)",
+      "origin": "addition",
+      "prs": []
+    }
+  ],
+  "pullRequests": [
+    {
+      "id": 4805957290,
+      "number": 1,
+      "title": "Build the Command Center with label/family and TrackZero/SceneSignal views",
+      "url": "https://github.com/neophilism/Unsealed-Records-Command-Center/pull/1",
+      "state": "open",
+      "draft": false,
+      "createdAt": "2026-10-09T21:16:59.000Z",
+      "updatedAt": "2026-10-09T22:08:00.000Z",
+      "closedAt": null,
+      "mergedAt": null,
+      "headSha": "4b7331e09f29185a35cbe34d4b88728470b070a2",
+      "baseRef": "main",
+      "mergeCommitSha": null
+    }
+  ]
+}
