@@ -1,7 +1,7 @@
 {
   "repository": "neophilism/Unsealed-Records-Command-Center",
   "title": "Unsealed-Records-Command-Center",
-  "version": 1,
+  "version": 2,
   "planVerified": true,
   "plannedPrCount": 16,
   "sourceFiles": [
@@ -11,7 +11,10 @@
     {
       "id": "URC-01",
       "title": "Responsive premium dashboard foundation",
-      "origin": "original"
+      "origin": "original",
+      "contributingPrs": [
+        1
+      ]
     },
     {
       "id": "URC-02",
@@ -86,7 +89,11 @@
     {
       "id": "URC-16",
       "title": "Added label/family/all-label scopes and platform views (approved additional scope)",
-      "origin": "addition"
+      "origin": "addition",
+      "contributingPrs": [
+        1
+      ]
     }
-  ]
+  ],
+  "contributionEvidenceNote": "contributingPrs are observed PRs that started work toward an unaccepted package, not full package acceptance. Complete a package only by validated prs references."
 }
