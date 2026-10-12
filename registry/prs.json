@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "repository": "neophilism/Unsealed-Records-Command-Center",
-  "roadmapVersion": 1,
+  "roadmapVersion": 2,
   "planVerified": true,
   "plannedPrCount": 16,
   "observedAt": "2026-10-11T17:41:04.850Z",
@@ -10,7 +10,10 @@
       "id": "URC-01",
       "title": "Responsive premium dashboard foundation",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "contributingPrs": [
+        1
+      ]
     },
     {
       "id": "URC-02",
@@ -100,7 +103,10 @@
       "id": "URC-16",
       "title": "Added label/family/all-label scopes and platform views (approved additional scope)",
       "origin": "addition",
-      "prs": []
+      "prs": [],
+      "contributingPrs": [
+        1
+      ]
     }
   ],
   "pullRequests": [
@@ -119,5 +125,6 @@
       "baseRef": "main",
       "mergeCommitSha": null
     }
-  ]
+  ],
+  "contributionEvidenceNote": "contributingPrs supply yellow underway evidence, prs supply green completion evidence only after package acceptance."
 }
