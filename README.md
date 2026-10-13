@@ -1,5 +1,7 @@
 # Unsealed Records Command Center
 
+**Complete development plan and cross-account handoff:** [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md).
+
 A **separate** Unsealed Records frontend built atop the provider-agnostic [Music Operations Engine](https://github.com/neophilism/Music-Operations-Engine).
 
 Start with Node 22+: `npm install && npm run dev`, then visit http://localhost:5173. `npm run build` produces `dist`. Without a reachable engine, the interface displays **clearly marked synthetic figures** so the UI can be reviewed safely. It never calls invented metrics real.
@@ -16,3 +18,6 @@ Reports refresh every 30 seconds while open. Changing labels clears the previous
 
 `npm run build` then `npm test` verifies the built dashboard, scoped query construction, exact counters, canonical release display, selection races, cached-data provenance and absence of server credentials from the client bundle.
 
+## End-to-End Everywhere progress
+
+The canonical [security/e2eesa-status.json](security/e2eesa-status.json) records standard implementation, complete testing and independent expert review separately. Engine Room reads it automatically from GitHub. All initial stages are pending; existing profile locks and approved decisions remain authoritative. Read [adoption and independent-account instructions](docs/E2EESA_ADOPTION.md), and run `python3 scripts/validate_e2eesa_status.py`. Record validation does not establish product security or certification.
