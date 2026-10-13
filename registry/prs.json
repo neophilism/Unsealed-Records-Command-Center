@@ -1,106 +1,158 @@
 {
-  "schemaVersion": 1,
   "repository": "neophilism/Unsealed-Records-Command-Center",
-  "roadmapVersion": 1,
+  "title": "Unsealed-Records-Command-Center",
   "planVerified": true,
   "plannedPrCount": 16,
+  "sourceFiles": [
+    "docs/DEVELOPMENT_PLAN.md"
+  ],
+  "schemaVersion": 1,
+  "roadmapVersion": 1,
   "observedAt": "2026-10-11T17:41:04.850Z",
   "units": [
     {
       "id": "URC-01",
       "title": "Responsive premium dashboard foundation",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-02",
       "title": "Production backend-for-frontend and identity",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-03",
       "title": "Production deployment and routing",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-04",
       "title": "Label catalog identity",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-05",
       "title": "Streaming insights",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-06",
       "title": "Storefront sales dashboards",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-07",
       "title": "TooLost statement drill-down",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-08",
       "title": "Stems White Label commerce",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-09",
       "title": "TrackZero speaker contributions",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-10",
       "title": "SceneSignal event/session insights",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-11",
       "title": "Event calendar/QR street launches",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-12",
       "title": "Artist portfolio and royalties",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-13",
       "title": "Goals, anomaly alerts and source health",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-14",
       "title": "Drill-downs, exports and audit",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-15",
       "title": "Roles, mobile quality and production acceptance",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "URC-16",
       "title": "Added label/family/all-label scopes and platform views (approved additional scope)",
       "origin": "addition",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     }
   ],
   "pullRequests": [
