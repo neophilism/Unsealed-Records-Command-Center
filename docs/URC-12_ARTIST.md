@@ -1,0 +1,3 @@
+# URC-12 artist portfolio and royalties guard
+
+Pure authenticated-data precondition and display projection, NOT functioning artist accounts, royalties ledger, or financial statement service. The sourceVerified and artistAuthorized inputs must be established by trusted server-side integration and never by browser input. Signed amounts permit adjustments; use source-correct currency minor units and do not infer spendable balance. Real acceptance: ownership and role checks, artist catalog integration, royalty split reconciliation, negative adjustments, payout schedules, withdrawal permissions, stale source handling and cross-artist tests.
