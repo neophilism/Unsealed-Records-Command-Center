@@ -17,6 +17,6 @@ export function verifyIdentity(token,{issuer,audience,jwks,nowMs=Date.now()}) {
       !Number.isSafeInteger(claims.exp)||claims.exp<=now||claims.iat>now+30||
       claims.exp-claims.iat>300||!Array.isArray(claims.labelGrants)||claims.labelGrants.length>100||
       (claims.nbf!==undefined&&(!Number.isSafeInteger(claims.nbf)||claims.nbf>now))) return null;
-    return {serverVerified:true,tokenValid:true,subject:claims.sub,expiresAtMs:claims.exp*1000,labelGrants:claims.labelGrants};
+    return {serverVerified:true,tokenValid:true,subject:claims.sub,nonce:claims.nonce,expiresAtMs:claims.exp*1000,labelGrants:claims.labelGrants};
   } catch {return null;}
 }
