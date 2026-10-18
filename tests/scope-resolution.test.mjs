@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {resolveLabelScope,verifyScopeRows} from '../src/scope-resolution.mjs';
+const now=1000;
+const registry={revision:'revision_1',labels:[{id:'label_1',active:true},{id:'label_2',active:true}],families:[{id:'family_1',active:true,labelIds:['label_1','label_2']}]};
+const grant=(labelId,role='viewer')=>({labelId,role,active:true,expiresAtMs:2000,registryRevision:'revision_1'});
+const subject={subjectId:'subject_1',serverVerified:true,grants:[grant('label_1'),grant('label_2')],familyGrants:[{familyId:'family_1',role:'viewer',active:true,expiresAtMs:2000,registryRevision:'revision_1'}],allLabelsGrant:{role:'owner',active:true,expiresAtMs:2000,registryRevision:'revision_1'}};
+const resolve=(s,r,reg=registry,t=now)=>resolveLabelScope(s,r,reg,t);
+test('resolves label, current family and explicit all-label owner scope',()=>{assert.deepEqual(resolve(subject,{kind:'label',labelId:'label_1'}),['label_1']);assert.deepEqual(resolve(subject,{kind:'family',familyId:'family_1'}),['label_1','label_2']);assert.deepEqual(resolve(subject,{kind:'all'}),['label_1','label_2']);});
+test('denies expired, revoked and stale membership',()=>{assert.throws(()=>resolve(subject,{kind:'label',labelId:'label_1'},registry,2000));assert.throws(()=>resolve({...subject,grants:[{...grant('label_1'),revokedAtMs:900}]},{kind:'label',labelId:'label_1'}));assert.throws(()=>resolve(subject,{kind:'family',familyId:'family_1'},{...registry,revision:'revision_2'}));});
+test('denies family or all grants missing one member',()=>{const one={...subject,grants:[grant('label_1')]};assert.throws(()=>resolve(one,{kind:'family',familyId:'family_1'}));assert.throws(()=>resolve(one,{kind:'all'}));assert.throws(()=>resolve({...subject,allLabelsGrant:{...subject.allLabelsGrant,role:'viewer'}},{kind:'all'}));});
+test('rejects inactive labels and cross-label joined rows',()=>{assert.throws(()=>resolve(subject,{kind:'label',labelId:'label_2'},{...registry,labels:[registry.labels[0],{id:'label_2',active:false}]}));assert.throws(()=>verifyScopeRows([{labelId:'label_2'}],['label_1']));assert.deepEqual(verifyScopeRows([{labelId:'label_1'}],['label_1']),[{labelId:'label_1'}]);});

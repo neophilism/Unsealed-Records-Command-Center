@@ -1,0 +1,7 @@
+# URC-16 label, family and all-label scopes
+
+`resolveLabelScope` consumes a server-verified subject and an authoritative, current registry snapshot for every request. It rejects inactive labels, stale registry revisions, expired/revoked grants, incomplete family grants, and any inferred all-label access. Family membership comes only from the registry, not the subject or browser. The all-label option requires a distinct active owner grant and a valid grant for every currently active label. `verifyScopeRows` checks joined/query results again to prevent cross-label leakage after resolution.
+
+The BFF must obtain identity, grants and registry data from trusted server stores, perform the scope resolution before an Engine query, and abort stale requests when a user changes the selected scope. Apply the same scope to each overview and TrackZero/SceneSignal panel. Never serialize server grants or API keys into frontend bundles. Revocation and membership changes need a current registry revision and fresh session/grant lookup; the pure policy module does not provide that storage or authentication.
+
+Local tests cover label/family/all resolution, expiry, revocation, stale membership, incomplete grants, inactive labels and leaked joined rows. Product acceptance still requires authenticated BFF integration, live Engine contracts, stale-response cancellation, and negative API tests on real tenant data.
