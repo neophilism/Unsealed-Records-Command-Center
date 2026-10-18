@@ -1,0 +1,3 @@
+# URC-09 TrackZero contribution projection
+
+A fail-closed representation guard accepts only verified, eligible, occurrence-specific vested points after completed closing identification. This does NOT measure speakers, validate decibels, establish audience size, prevent physical-output double counting or issue credits. Points are exact decimal strings in micro-units and do not imply money or measured listener counts. Future integration requires TrackZero verified event contract, strict deduplication, calibration and uncertainty standards, creator allocation, accurate eligibility policy, authenticated per-label access and trusted provider signature validation.
