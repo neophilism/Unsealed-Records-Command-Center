@@ -1,0 +1,7 @@
+# URC-15 roles and production acceptance
+
+The server must build `identityVerified`, subject and grants from the authenticated session and authoritative grant repository. `authorizeLabelAction` denies unknown actions, inactive, expired or revoked grants; viewers can read, operators can export or operate, and only owners can manage. `authorizeScope` rejects a multi-label query unless every label is authorized. `selectAuthorizedRows` checks that the resulting rows stayed inside the authorized label set. These checks run at the BFF boundary before and after repository access.
+
+`evaluateProductionReadiness` reports missing evidence for accessibility, mobile, authorization, source integration, incident response and backup restore. Its input must be assembled by the release process from actual observed checks; passing caller-supplied booleans is never proof of production readiness. The current repository has no integrated BFF/UI, deployed service or backup system, so readiness is pending. Source integrity and PR registry CI do not cover those product requirements.
+
+Remaining verification: real session expiration and revocation, role and cross-tenant API tests, keyboard and screen reader journeys, narrow viewport and touch testing, live Engine data with freshness/retry, production health and incident drill, and a performed backup restore. Maintain external human security review as later follow-up without labeling an AI review as independent certification.
