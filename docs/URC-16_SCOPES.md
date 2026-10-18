@@ -1,0 +1,3 @@
+# URC-16 label, family and all-label grants
+
+A pure policy refuses inferred cross-label or family access. There is no deployed subject authentication, family registry or verified identity provider. Only a trusted backend may set serverVerified and the scope grants, and it must verify the complete authorized label set transactionally; a client-supplied allLabelsGranted is never authority. Future tests: grant revocation, empty labels, stale membership, multi-role overlaps, case changes and cross-label data joins. Restrict platform-wide reporting to explicit verified owner roles with current policy and audit.
