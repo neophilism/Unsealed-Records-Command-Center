@@ -35,7 +35,11 @@ export function summarizeSalesEvents(rows,{requestedLabelId,expectedSource,nowMs
  }
  const events=[...latest.values()];
  const orders=new Map();
+ const orderDimensions=new Map();
  for(const event of events){
+  const dimensions=JSON.stringify([event.currency,event.storefront,event.country]);
+  if(orderDimensions.has(event.orderId)&&orderDimensions.get(event.orderId)!==dimensions) return fail();
+  orderDimensions.set(event.orderId,dimensions);
   const key=JSON.stringify([event.orderId,event.currency]);
   const totals=orders.get(key)||{sale:0n,discount:0n,refund:0n};
   if(event.kind in totals) totals[event.kind]+=BigInt(event.amountMinor);

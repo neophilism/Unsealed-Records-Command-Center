@@ -23,6 +23,7 @@ test('wrong label, malformed money, unsupported source and over-refund fail',()=
   {...base,source:{...base.source,system:'unknown'}}]) assert.throws(()=>projectSalesEvent(row,options));
  assert.throws(()=>summarizeSalesEvents([base,event('event_0002','refund','9007199254740994')],options));
  assert.throws(()=>summarizeSalesEvents([event('event_0002','refund','1')],options));
+ assert.throws(()=>summarizeSalesEvents([base,{...event('event_0002','fee','1'),storefront:'other'}],options));
 });
 test('empty selection is awaiting, not zero revenue',()=>{
  const result=summarizeSalesEvents([base],{...options,country:'GB'});
