@@ -1,0 +1,3 @@
+# URC-06 storefront sales projection
+
+This validates authorized source metadata, currencies and exact minor-unit decimals, but does not connect to an actual processor, create charts, model refunds, taxes, settlement, chargebacks or finance reconciliations. A source flag alone is not authentication: the server must independently authenticate the upstream source and label grant. Production work requires currency-specific exponent handling, financial ledger reconciliation, live source latencies, API credentials kept server-side, refund/settlement statuses, cross-label access tests and accessible display.
