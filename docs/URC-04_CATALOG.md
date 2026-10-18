@@ -1,0 +1,3 @@
+# URC-04 catalog identity guard
+
+This pure metadata validator preserves owning-label scope, release ID and syntactically plausible ISRC. It is NOT an authenticated Music Operations Engine API integration, authoritative ownership verification, legal rights proof, or complete catalog. ISRC syntax does not prove provenance. Do not infer catalog availability or expose private label records through public routes. Future work: verify upstream contract and ownership, include artwork and work/track relations, support releases without ISRC in appropriate model, render dates and source provenance, test cross-label/late/out-of-order data.
