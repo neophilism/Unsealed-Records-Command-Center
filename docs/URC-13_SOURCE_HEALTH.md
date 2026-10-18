@@ -1,3 +1,5 @@
-# URC-13 source freshness and goals
+# URC-13 source health and alert decisions
 
-Pure exact-integer goal comparison and fail-closed source-health freshness projection. No alert delivery, persisted anomaly baseline or live provider monitoring exists. A reported current source is only as trustworthy as server-verified source identity and update timestamps. Unknown/unverified sources must not be presented as healthy. Future tests cover stale/late/out-of-order data, clock skew, threshold hysteresis, anomaly false positives, owner notification preferences, retention and monitoring health.
+The source observation projection rejects wrong labels, unverified identities, future timestamps and invalid revisions. The alert evaluator compares exact decimal metrics to an authorized baseline, requires consecutive breaches and recoveries to reduce flapping, and treats stale or synthetic observations explicitly. Replayed and out-of-order source revisions are ignored. The same-origin client rejects an old label scope and sends no provider credential.
+
+Run `node --test tests/source-health.test.mjs tests/health-client.test.mjs`. This code makes read-only dashboard decisions. Alert state is in memory and is not durable or delivered to owners. No live monitoring feed, persisted baseline, notification service, escalation policy or end-to-end provider check has been verified. The production BFF must authenticate source reports and label access; a server worker must persist state and handle delivery before claiming operational alerts.
