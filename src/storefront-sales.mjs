@@ -13,12 +13,12 @@ export function projectSalesEvent(row,{requestedLabelId,expectedSource,nowMs=Dat
   !/^\d{4}-(0[1-9]|1[0-2])$/.test(row.period||'')||!kinds.has(row.kind)||
   !settlements.has(row.settlement)||typeof row.amountMinor!=='string'||
   !money.test(row.amountMinor)||row.amountMinor.length>100||
-  !row.source||row.source.system!==expectedSource||!Number.isSafeInteger(row.source.revision)||
+  !row.source||row.source.system!==expectedSource||!['live','synthetic'].includes(row.source.kind)||!Number.isSafeInteger(row.source.revision)||
   row.source.revision<0||!Number.isSafeInteger(row.source.observedAtMs)||
   row.source.observedAtMs<0||!Number.isSafeInteger(nowMs)||row.source.observedAtMs>nowMs+30000) return fail();
  return Object.freeze({labelId:row.labelId,eventId:row.eventId,orderId:row.orderId,storefront:row.storefront,
   country:row.country,currency:row.currency,period:row.period,kind:row.kind,settlement:row.settlement,
-  amountMinor:row.amountMinor,source:Object.freeze({system:row.source.system,revision:row.source.revision,observedAtMs:row.source.observedAtMs})});
+  amountMinor:row.amountMinor,source:Object.freeze({system:row.source.system,kind:row.source.kind,revision:row.source.revision,observedAtMs:row.source.observedAtMs})});
 }
 
 export function summarizeSalesEvents(rows,{requestedLabelId,expectedSource,nowMs=Date.now(),period,country,storefront}={}){
@@ -59,7 +59,9 @@ export function summarizeSalesEvents(rows,{requestedLabelId,expectedSource,nowMs
   totals[event.settlement==='settled'?'settledNet':'pendingNet']+=signed;
   byCurrency.set(event.currency,totals);
  }
- return Object.freeze({labelId:requestedLabelId,availability:selected.length?'observed':'awaiting',
+ const availability=selected.length===0?'awaiting':selected.every(x=>x.source.kind==='synthetic')?'synthetic':
+  selected.some(x=>x.source.kind==='synthetic')?'mixed':'observed';
+ return Object.freeze({labelId:requestedLabelId,availability,
   currencies:Object.freeze([...byCurrency].sort(([a],[b])=>a.localeCompare(b)).map(([currency,t])=>Object.freeze({
     currency,orderCount:t.orders.size.toString(),grossMinor:t.gross.toString(),discountMinor:t.discounts.toString(),
     refundMinor:t.refunds.toString(),feeMinor:t.fees.toString(),

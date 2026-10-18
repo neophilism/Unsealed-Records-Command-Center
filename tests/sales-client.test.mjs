@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {createSalesClient} from './sales-client.mjs';
-const event=(label,revision=1)=>({labelId:label,eventId:'event_0001',orderId:'order_0001',storefront:'bandcamp',country:'US',currency:'USD',period:'2026-10',kind:'sale',settlement:'settled',amountMinor:'20',source:{system:'engine',revision,observedAtMs:1000}});
+const event=(label,revision=1)=>({labelId:label,eventId:'event_0001',orderId:'order_0001',storefront:'bandcamp',country:'US',currency:'USD',period:'2026-10',kind:'sale',settlement:'settled',amountMinor:'20',source:{system:'engine',kind:'live',revision,observedAtMs:1000}});
 const json=(label,revision)=>new Response(JSON.stringify({labelId:label,events:[event(label,revision)]}),{headers:{'content-type':'application/json'}});
 test('same-origin sales request carries no provider credential',async()=>{
  const client=createSalesClient({expectedSource:'engine',now:()=>2000,fetchImpl:async(url,options)=>{

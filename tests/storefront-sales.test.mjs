@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {projectSalesEvent,summarizeSalesEvents,projectStorefrontSale} from './sales.mjs';
-const base={labelId:'label_0001',eventId:'event_0001',orderId:'order_0001',storefront:'bandcamp',country:'US',currency:'USD',period:'2026-10',kind:'sale',settlement:'settled',amountMinor:'9007199254740993',source:{system:'engine',revision:1,observedAtMs:1000}};
+const base={labelId:'label_0001',eventId:'event_0001',orderId:'order_0001',storefront:'bandcamp',country:'US',currency:'USD',period:'2026-10',kind:'sale',settlement:'settled',amountMinor:'9007199254740993',source:{system:'engine',kind:'live',revision:1,observedAtMs:1000}};
 const options={requestedLabelId:'label_0001',expectedSource:'engine',nowMs:2000};
 const event=(eventId,kind,amountMinor,settlement='settled')=>({...base,eventId,kind,amountMinor,settlement});
 test('exact per-currency gross, discounts, refunds, fees and settlement totals',()=>{
@@ -28,6 +28,10 @@ test('wrong label, malformed money, unsupported source and over-refund fail',()=
 test('empty selection is awaiting, not zero revenue',()=>{
  const result=summarizeSalesEvents([base],{...options,country:'GB'});
  assert.equal(result.availability,'awaiting');assert.deepEqual(result.currencies,[]);
+});
+test('synthetic sales stay explicitly synthetic',()=>{
+ const synthetic={...base,source:{...base.source,kind:'synthetic'}};
+ assert.equal(summarizeSalesEvents([synthetic],options).availability,'synthetic');
 });
 test('legacy minor-unit projection remains compatible',()=>{
  const row={labelAuthorized:true,sourceVerified:true,labelId:'label_0001',currency:'USD',amountMinor:'9007199254740993',orderCount:'2',period:'2026-10'};
