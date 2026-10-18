@@ -1,3 +1,7 @@
-# URC-07 TooLost statement guard
+# URC-07 TooLost statement boundary
 
-Data validation only; no TooLost provider authentication, API, statements ingestion or live drill-down exists. All provenance and label permissions must be verified server-side; a caller-supplied verified flag is not sufficient. Currency minor-unit integers are transported as exact strings. Future acceptance needs signed and pinned upstream records, statement versions, pagination, withholding/splits/reversals, reconciliation of totals, cross-label negative tests, and no provider secret in the frontend.
+The statement projection validates label, statement, period, currency, line IDs, release/track links, signed royalty amounts, source revision and document SHA-256. It reconciles the exact `BigInt` sum of royalty, reversal and adjustment lines to the declared statement total. Synthetic records retain their synthetic marker. Line drill-down cannot select an absent line.
+
+The same-origin client requests `/api/labels/{labelId}/reports/toolost` through the authenticated BFF without a provider key. It rejects wrong-label responses, duplicate statement IDs and older revisions, and discards in-flight results after a scope switch. Run `node --test tests/toolost-statement.test.mjs tests/toolost-client.test.mjs`.
+
+No TooLost provider API, document ingestion, payout reconciliation, or authenticated Music Operations Engine statement contract has been verified. The BFF must enforce user grants and source authentication, and the document hash must be compared to the actual provider artifact before this view is treated as live evidence. The legacy `projectTooLostStatement` remains for earlier draft consumers.
