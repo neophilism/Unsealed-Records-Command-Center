@@ -31,6 +31,12 @@ test('wrong-label upstream payload fails closed',async()=>{
   assert.equal(response.status,502);assert.deepEqual(await response.json(),{error:'UNAVAILABLE',message:'Data is unavailable'});
  });
 });
+test('unsafe large JSON numbers are rejected rather than silently rounded',async()=>{
+ await withServer(async()=>new Response('{"labelId":"label_0001","count":9007199254740993}',{headers:{'content-type':'application/json'}}),async base=>{
+  const response=await fetch(base+'/api/labels/label_0001/reports/streams',{headers:{authorization:'Bearer '+token()}});
+  assert.equal(response.status,502);
+ });
+});
 test('OIDC code flow binds state, nonce and PKCE before issuing secure session',async()=>{
  let nonce,tokenCalls=0,reportCalls=0;
  const server=createBff({issuer:'issuer',audience:'dashboard',jwks:{keys:[jwk]},engineOrigin:'https://engine.example/',engineToken:'server-secret',reports:{streams:'/v1/labels/{labelId}/reports/streams'},now:()=>1800000000000,
@@ -54,7 +60,7 @@ test('OIDC code flow binds state, nonce and PKCE before issuing secure session',
   assert.equal(invalid.status,401);assert.equal(tokenCalls,0);
   const callback=await fetch(base+'/auth/callback?code=abc&state='+location.searchParams.get('state'),{headers:{cookie:pending},redirect:'manual'});
   assert.equal(callback.status,303);assert.equal(tokenCalls,1);
-  const cookies=callback.headers.getSetCookie();const session=cookies.find(x=>x.startsWith('bff_session='));
+  const cookies=callback.headers.getSetCookie();const session=cookies.find(x=>x.startsWith('__Host-bff_session='));
   assert.match(session,/HttpOnly; Secure; SameSite=Lax/);
   const ok=await fetch(base+'/api/labels/label_0001/reports/streams',{headers:{cookie:session.split(';')[0]}});
   assert.equal(ok.status,200);assert.equal(reportCalls,1);
