@@ -1,0 +1,3 @@
+# URC-11 event/QR street launch scope
+
+A public event metadata projection guard only; no calendar, QR code issuance, tracking, geolocation, campaign activation, payment, or live event exists. Public QR destinations require a centrally verified HTTPS allowlist and no secret/token embedded in the URL, plus protections against redirects, phishing and unconsented attendee tracking. Private attendee identity or venue details must never leak to public metadata. Future end-to-end tests: accessible calendar navigation, cancelled/changed events, QR scan behavior, URL safety, cross-label publication, consent and redaction.
