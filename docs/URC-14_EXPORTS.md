@@ -1,0 +1,3 @@
+# URC-14 export and audit guard
+
+A pure authorization precondition for future scoped exports; no actual export job, file, protected download URL, audit persistence or drill-down UI is present. Derive serverAuthenticated and labelVerified from server sessions and datastore; never trust client booleans. Authenticate purpose, resource scope, recipient, expiry, version and independent audit transaction before producing any export. Redact credentials and unrelated labels, cap volume, defend against CSV formula injection, sign short-lived URLs and test revoke/retry, audit immutability and tenant isolation.
