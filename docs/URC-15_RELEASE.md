@@ -1,0 +1,3 @@
+# URC-15 roles/mobile/production gate baseline
+
+Pure deny-by-default label role and multi-domain release readiness checks, not implemented identity, accessibility, mobile UX or deployment. Genuine production acceptance requires live app journeys, keyboard/screen-reader and small-screen testing, proper authentication and cross-label negative tests, verified source contracts, incident response and actual database backup/restore. An engineering self-review cannot establish unearned certification; retain independent external review as follow-up, not the sole deployment block. Do not accept front-end caller-supplied identityVerified flags as authority.

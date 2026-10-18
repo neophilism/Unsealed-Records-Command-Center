@@ -1,0 +1,2 @@
+export function canViewLabel(user,labelId){if(!user||user.identityVerified!==true||typeof labelId!=='string'||labelId.length<8||!Array.isArray(user.grants))return false;return user.grants.some(g=>g?.labelId===labelId&&g.active===true&&['viewer','operator','owner'].includes(g.role));}
+export function acceptProductionReadiness(checks){const required=['accessibility','mobile','authorization','sourceIntegration','incidentResponse','backupRestore'];return checks&&required.every(k=>checks[k]?.verified===true&&checks[k]?.passed===true);}
