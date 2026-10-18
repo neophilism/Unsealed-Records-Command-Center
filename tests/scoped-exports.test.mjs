@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createExportService,makeCsv,signExportTicket,verifyExportTicket} from './urc14.mjs';
+import {createExportService,makeCsv,signExportTicket,verifyExportTicket} from '../src/scoped-exports.mjs';
 const key=Buffer.alloc(32,7);
 const identity={subjectId:'person_123',labels:['label_123'],roles:['export']};
 const rows=[{labelId:'label_123',resourceId:'release_1',artist:'=2+2',amount:'9007199254740993',sourceEventId:'source_1'}];
