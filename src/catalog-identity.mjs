@@ -1,1 +1,47 @@
-export function projectLabelRelease(input){if(!input||typeof input!=='object'||typeof input.labelId!=='string'||! /^[a-zA-Z0-9_-]{8,128}$/.test(input.labelId)||typeof input.releaseId!=='string'||! /^[a-zA-Z0-9_-]{8,128}$/.test(input.releaseId)||typeof input.title!=='string'||input.title.trim().length<2||typeof input.isrc!=='string'||! /^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$/.test(input.isrc)||input.labelVerified!==true||input.sourceVerified!==true)throw new Error('Unverified label catalog record');return Object.freeze({labelId:input.labelId,releaseId:input.releaseId,title:input.title.trim(),isrc:input.isrc});}
+const id=/^[A-Za-z0-9_-]{8,128}$/;
+const isrc=/^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$/;
+const text=(v,max=300)=>typeof v==='string'&&v.trim().length>0&&v.trim().length<=max&&!/[\u0000-\u001f]/.test(v);
+const fail=()=>{throw new Error('Invalid catalog record');};
+/** Schema projection; the caller must authenticate the upstream source and user. */
+export function projectLabelCatalog(payload,{requestedLabelId,expectedSource,artworkHosts=[],nowMs=Date.now()}={}){
+ if(typeof requestedLabelId!=='string'||!id.test(requestedLabelId)||!text(expectedSource,100)||
+    !payload||typeof payload!=='object'||Array.isArray(payload)||
+    payload.labelId!==requestedLabelId||!id.test(payload.releaseId||'')||!text(payload.title)||
+    !Array.isArray(payload.tracks)||payload.tracks.length<1||payload.tracks.length>500||
+    !payload.source||payload.source.system!==expectedSource||!Number.isSafeInteger(payload.source.revision)||
+    payload.source.revision<0||!Number.isSafeInteger(payload.source.observedAtMs)||
+    payload.source.observedAtMs>nowMs+30000||payload.source.observedAtMs<0) return fail();
+ const seen=new Set();
+ const tracks=payload.tracks.map(track=>{
+  if(!track||!id.test(track.trackId||'')||seen.has(track.trackId)||!text(track.title)||
+     typeof track.isrc!=='string'||!isrc.test(track.isrc)) return fail();
+  seen.add(track.trackId);
+  return Object.freeze({trackId:track.trackId,title:track.title.trim(),isrc:track.isrc});
+ });
+ let artworkUrl=null;
+ if(payload.artworkUrl!==null&&payload.artworkUrl!==undefined){
+  try{const url=new URL(payload.artworkUrl);if(url.protocol!=='https:'||url.username||url.password||url.hash||!artworkHosts.includes(url.hostname)) return fail();artworkUrl=url.href;}
+  catch{return fail();}
+ }
+ return Object.freeze({labelId:payload.labelId,releaseId:payload.releaseId,title:payload.title.trim(),
+  tracks:Object.freeze(tracks),artworkUrl,
+  source:Object.freeze({system:payload.source.system,revision:payload.source.revision,observedAtMs:payload.source.observedAtMs})});
+}
+
+/** Keeps revisions isolated by label/release/source to reject late snapshots. */
+export function createCatalogRevisionGuard(){
+ const latest=new Map();
+ return Object.freeze({accept(record){
+  const key=JSON.stringify([record.labelId,record.releaseId,record.source.system]);
+  const previous=latest.get(key);
+  if(previous!==undefined&&record.source.revision<=previous) return false;
+  latest.set(key,record.source.revision);return true;
+ }});
+}
+
+export function projectLabelRelease(input){
+ if(!input||typeof input!=='object'||!id.test(input.labelId||'')||!id.test(input.releaseId||'')||
+   !text(input.title)||typeof input.isrc!=='string'||!isrc.test(input.isrc)||
+   input.labelVerified!==true||input.sourceVerified!==true) return fail();
+ return Object.freeze({labelId:input.labelId,releaseId:input.releaseId,title:input.title.trim(),isrc:input.isrc});
+}
