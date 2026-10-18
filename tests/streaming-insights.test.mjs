@@ -7,6 +7,7 @@ test('retains exact huge counts and filters period, country and platform',()=>{
  const result=selectStreamingRecords(records,{...options,period:'2026-10',country:'US',platform:'spotify'});
  assert.equal(result.totalStreams,'9007199254740993');assert.equal(result.records.length,1);
  const all=selectStreamingRecords(records,options);assert.equal(all.totalStreams,'9007199254741007');
+ const missing=selectStreamingRecords(records,{...options,period:'2025-01'});assert.equal(missing.totalStreams,null);assert.equal(missing.availability,'awaiting');
 });
 test('newer revision replaces old and conflicting duplicate revision is denied',()=>{
  const newer={...base,streams:'8',source:{...base.source,revision:2}};

@@ -42,8 +42,10 @@ export function selectStreamingRecords(records,{requestedLabelId,period,country,
  const selected=[...latest.values()].filter(x=>(period===undefined||x.period===period)&&
   (country===undefined||x.country===country)&&(platformFilter===undefined||x.platform===platformFilter));
  selected.sort((a,b)=>a.period.localeCompare(b.period)||a.country.localeCompare(b.country)||a.platform.localeCompare(b.platform));
- const total=selected.reduce((sum,x)=>sum+BigInt(x.streams),0n).toString();
- return Object.freeze({labelId:requestedLabelId,totalStreams:total,records:Object.freeze(selected)});
+ const total=selected.length?selected.reduce((sum,x)=>sum+BigInt(x.streams),0n).toString():null;
+ const availability=selected.length===0?'awaiting':selected.every(x=>x.state==='synthetic')?'synthetic':
+   selected.some(x=>x.state==='synthetic')?'mixed':selected.some(x=>x.state==='cached')?'cached':'live';
+ return Object.freeze({labelId:requestedLabelId,totalStreams:total,availability,records:Object.freeze(selected)});
 }
 
 /** Legacy narrow projection retained for existing draft consumers. */
