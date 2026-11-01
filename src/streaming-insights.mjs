@@ -17,7 +17,7 @@ export function projectStreamingRecord(x,{requestedLabelId,expectedSource,nowMs=
     !x.source||x.source.system!==expectedSource||!['live','synthetic'].includes(x.source.kind)||
     !Number.isSafeInteger(x.source.revision)||x.source.revision<0||
     !Number.isSafeInteger(x.source.observedAtMs)||x.source.observedAtMs<0||
-    !Number.isSafeInteger(nowMs)||!Number.isSafeInteger(freshnessMs)||freshnessMs<0||
+    !Number.isSafeInteger(nowMs)||nowMs<0||!Number.isSafeInteger(freshnessMs)||freshnessMs<0||
     x.source.observedAtMs>nowMs+30000) return fail();
  const ageMs=Math.max(0,nowMs-x.source.observedAtMs);
  const state=x.source.kind==='synthetic'?'synthetic':ageMs>freshnessMs?'cached':'live';
@@ -27,22 +27,27 @@ export function projectStreamingRecord(x,{requestedLabelId,expectedSource,nowMs=
 
 /** Select latest source revisions, preserving exact integer counts. */
 export function selectStreamingRecords(records,{requestedLabelId,period,country,platform:platformFilter,expectedSource,nowMs=Date.now(),freshnessMs=86400000}={}){
- if(!Array.isArray(records)||records.length>10000||
+ if(typeof requestedLabelId!=='string'||!label.test(requestedLabelId)||typeof expectedSource!=='string'||!expectedSource||
+   !Number.isSafeInteger(nowMs)||nowMs<0||!Number.isSafeInteger(freshnessMs)||freshnessMs<0||
+   !Array.isArray(records)||records.length>10000||
    (period!==undefined&&!validPeriod(period))||
-   (country!==undefined&&!/^([A-Z]{2}|ALL)$/.test(country))||
-   (platformFilter!==undefined&&!platform.test(platformFilter))) return fail();
+   (country!==undefined&&(typeof country!=='string'||!/^([A-Z]{2}|ALL)$/.test(country)))||
+   (platformFilter!==undefined&&(typeof platformFilter!=='string'||!platform.test(platformFilter)))) return fail();
  const latest=new Map();
  for(const raw of records){
   const record=projectStreamingRecord(raw,{requestedLabelId,expectedSource,nowMs,freshnessMs});
-  const key=JSON.stringify([record.period,record.country,record.platform]);
+  const key=JSON.stringify([record.period,record.country,record.platform,record.source.kind]);
   const previous=latest.get(key);
   if(previous&&record.source.revision===previous.source.revision&&JSON.stringify(record)!==JSON.stringify(previous)) return fail();
   if(!previous||record.source.revision>previous.source.revision) latest.set(key,record);
  }
+ const aggregateKeys=new Set([...latest.values()].filter(x=>x.country==='ALL').map(x=>JSON.stringify([x.period,x.platform,x.source.kind])));
  const selected=[...latest.values()].filter(x=>(period===undefined||x.period===period)&&
+  (country!==undefined||x.country==='ALL'||!aggregateKeys.has(JSON.stringify([x.period,x.platform,x.source.kind])))&&
   (country===undefined||x.country===country)&&(platformFilter===undefined||x.platform===platformFilter));
  selected.sort((a,b)=>a.period.localeCompare(b.period)||a.country.localeCompare(b.country)||a.platform.localeCompare(b.platform));
- const total=selected.length?selected.reduce((sum,x)=>sum+BigInt(x.streams),0n).toString():null;
+ const mixed=selected.some(x=>x.state==='synthetic')&&selected.some(x=>x.state!=='synthetic');
+ const total=selected.length&&!mixed?selected.reduce((sum,x)=>sum+BigInt(x.streams),0n).toString():null;
  const availability=selected.length===0?'awaiting':selected.every(x=>x.state==='synthetic')?'synthetic':
    selected.some(x=>x.state==='synthetic')?'mixed':selected.some(x=>x.state==='cached')?'cached':'live';
  return Object.freeze({labelId:requestedLabelId,totalStreams:total,availability,records:Object.freeze(selected)});
