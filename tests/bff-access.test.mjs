@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {permitLabelRequest,publicBffFailure} from '../src/bff/access.mjs';
+const good={serverVerified:true,tokenValid:true,expiresAtMs:5000,labelGrants:[{labelId:'label_0001',active:true,role:'viewer',expiresAtMs:4000}]};
+test('allows only verified scoped unexpired label grants',()=>{assert.equal(permitLabelRequest(good,'label_0001',1000),true);for(const x of [{...good,serverVerified:false},{...good,tokenValid:false},{...good,labelGrants:[]}])assert.equal(permitLabelRequest(x,'label_0001',1000),false);assert.equal(permitLabelRequest(good,'label_0002',1000),false);assert.equal(permitLabelRequest(good,'label_0001',5000),false);});
+test('public error omits provider detail and credentials',()=>assert.doesNotMatch(JSON.stringify(publicBffFailure()),/token|secret|internal/i));

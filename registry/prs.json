@@ -8,7 +8,7 @@
   ],
   "schemaVersion": 1,
   "roadmapVersion": 1,
-  "observedAt": "2026-10-11T17:41:04.850Z",
+  "observedAt": "2026-10-19T00:11:47Z",
   "units": [
     {
       "id": "URC-01",
@@ -23,7 +23,9 @@
       "id": "URC-02",
       "title": "Production backend-for-frontend and identity",
       "origin": "original",
-      "prs": [],
+      "prs": [
+        7
+      ],
       "dependsOn": [],
       "externalDependencies": [],
       "externalPrerequisites": []
@@ -170,6 +172,21 @@
       "headSha": "4b7331e09f29185a35cbe34d4b88728470b070a2",
       "baseRef": "main",
       "mergeCommitSha": null
+    },
+    {
+      "id": 4913258825,
+      "number": 7,
+      "title": "URC-02: Production backend-for-frontend and identity",
+      "url": "https://github.com/neophilism/Unsealed-Records-Command-Center/pull/7",
+      "state": "open",
+      "draft": true,
+      "createdAt": "2026-10-18T22:08:45.000Z",
+      "updatedAt": "2026-10-19T00:10:57.000Z",
+      "closedAt": null,
+      "mergedAt": null,
+      "headSha": "d3f185d53bee9b53a8f400ed9354fbf71258efd2",
+      "baseRef": "main",
+      "mergeCommitSha": "6a41d4b7abbe1a290900f5d99619e21df92c9b29"
     }
   ]
 }
