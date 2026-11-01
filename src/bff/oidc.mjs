@@ -8,7 +8,7 @@ export function seal(value,key){
 }
 export function unseal(value,key){
  try {
-  if(typeof value!=='string'||value.length>20000) return null;
+  if(typeof value!=='string'||value.length>4000||!/^[A-Za-z0-9_-]+$/.test(value)) return null;
   const raw=Buffer.from(value,'base64url');if(raw.length<29) return null;
   const decipher=createDecipheriv('aes-256-gcm',key,raw.subarray(0,12));
   decipher.setAuthTag(raw.subarray(12,28));
@@ -18,8 +18,8 @@ export function unseal(value,key){
 export function cookieValue(header,name){
  if(typeof header!=='string') return null;
  const entries=header.split(';').map(x=>x.trim());
- const match=entries.find(x=>x.startsWith(name+'='));
- return match?match.slice(name.length+1):null;
+ const matches=entries.filter(x=>x.startsWith(name+'='));
+ return matches.length===1?matches[0].slice(name.length+1):null;
 }
 export function oidcLogin(config,key,nowMs){
  const state=b64(randomBytes(24)),nonce=b64(randomBytes(24)),verifier=b64(randomBytes(32));
@@ -37,7 +37,9 @@ export function validOidcConfig(config){
   const authorization=new URL(config.authorizationEndpoint),token=new URL(config.tokenEndpoint),redirect=new URL(config.redirectUri);
   return authorization.protocol==='https:'&&token.protocol==='https:'&&redirect.protocol==='https:'&&
    typeof config.clientId==='string'&&config.clientId.length>0&&
-   !authorization.username&&!authorization.password&&!token.username&&!token.password;
+   !authorization.username&&!authorization.password&&!authorization.hash&&
+   !token.username&&!token.password&&!token.hash&&
+   !redirect.username&&!redirect.password&&!redirect.search&&!redirect.hash&&redirect.pathname==='/auth/callback';
  }catch{return false;}
 }
 export function cookie(name,value,maxAge){

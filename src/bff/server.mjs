@@ -22,6 +22,14 @@ export function createBff({issuer,audience,jwks,engineOrigin,engineToken,reports
     }catch{return null;}
   };
   return http.createServer(async(req,res)=>{
+    res.setHeader('referrer-policy','no-referrer');
+    res.setHeader('x-content-type-options','nosniff');
+    res.setHeader('cache-control','no-store');
+    if(oidc&&req.method==='POST'&&req.url==='/auth/logout'){
+      if(req.headers.origin!==new URL(oidc.redirectUri).origin||req.headers['sec-fetch-site']==='cross-site')
+        return send(res,403,publicBffFailure());
+      res.writeHead(303,{location:'/', 'set-cookie':cookie('__Host-bff_session','',0)});return res.end();
+    }
     if(req.method!=='GET'||typeof req.url!=='string'||req.url.length>2048) return send(res,404,publicBffFailure());
     let url;try{url=new URL(req.url,'http://localhost');}catch{return send(res,404,publicBffFailure());}
     if(url.pathname==='/healthz'&&!url.search) return send(res,200,{status:'ok'});
@@ -43,21 +51,37 @@ export function createBff({issuer,audience,jwks,engineOrigin,engineToken,reports
         const body=await readJson(response,{maxBytes:20000,signal});
         const identity=verifyIdentity(body.id_token,{issuer,audience,jwks,nowMs:now()});
         if(!identity||identity.nonce!==pending.nonce) return send(res,401,publicBffFailure());
-        res.setHeader('set-cookie',[cookie('__Host-bff_pending','',0),cookie('__Host-bff_session',seal({token:body.id_token},sessionKey),Math.min(300,Math.floor((identity.expiresAtMs-now())/1000)))]);
+        const session=seal({token:body.id_token},sessionKey);
+        // Browsers reject cookies larger than 4096 bytes; never silently issue an unusable login.
+        if(session.length>3800) return send(res,401,publicBffFailure());
+        res.setHeader('set-cookie',[cookie('__Host-bff_pending','',0),cookie('__Host-bff_session',session,Math.min(300,Math.floor((identity.expiresAtMs-now())/1000)))]);
         res.writeHead(303,{location:'/', 'cache-control':'no-store'});return res.end();
       }catch{return send(res,401,publicBffFailure());}
     }
-    if(oidc&&url.pathname==='/auth/logout'&&!url.search){
-      res.writeHead(303,{location:'/', 'cache-control':'no-store','set-cookie':cookie('__Host-bff_session','',0)});return res.end();
-    }
     const route=/^\/api\/labels\/([A-Za-z0-9_-]{8,128})\/reports\/([A-Za-z0-9_-]{1,64})$/.exec(url.pathname);
-    if(!route||url.search||!Object.hasOwn(reports,route[2])) return send(res,404,publicBffFailure());
+    const sessionRoute=url.pathname==='/api/session'&&!url.search;
+    if(!sessionRoute&&(!route||url.search||!Object.hasOwn(reports,route[2]))) return send(res,404,publicBffFailure());
     const auth=req.headers.authorization;
     let token;
     if(typeof auth==='string'&&/^Bearer [A-Za-z0-9._-]+$/.test(auth)) token=auth.slice(7);
+    else if(auth!==undefined) return send(res,401,publicBffFailure());
     else if(oidc){const session=unseal(cookieValue(req.headers.cookie,'__Host-bff_session'),sessionKey);token=session?.token;}
     if(!token) return send(res,401,publicBffFailure());
     const context=verifyIdentity(token,{issuer,audience,jwks,nowMs:now()});
+    if(sessionRoute){
+      if(!context) return send(res,401,publicBffFailure());
+      const labels=[];
+      const seen=new Set();
+      for(const grant of context.labelGrants){
+        if(!permitLabelRequest(context,grant?.labelId,now())||seen.has(grant.labelId)) continue;
+        seen.add(grant.labelId);
+        const current=await authorize(context,grant.labelId);
+        if(current){const active=current.labelGrants.find(g=>g.labelId===grant.labelId&&g.active===true);
+          labels.push({labelId:grant.labelId,role:active.role,expiresAtMs:Math.min(active.expiresAtMs,context.expiresAtMs)});}
+      }
+      if(context.expiresAtMs<=now()) return send(res,401,publicBffFailure());
+      return send(res,200,{subject:context.subject,expiresAtMs:context.expiresAtMs,labels});
+    }
     if(!permitLabelRequest(context,route[1],now())) return send(res,403,publicBffFailure());
     if(!await authorize(context,route[1])) return send(res,403,publicBffFailure());
     const template=reports[route[2]];

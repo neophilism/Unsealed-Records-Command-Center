@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {generateKeyPairSync,sign} from 'node:crypto';
 import {createBff} from '../src/bff/server.mjs';
+import {seal} from '../src/bff/oidc.mjs';
 const {publicKey,privateKey}=generateKeyPairSync('rsa',{modulusLength:2048});
 const jwk={...publicKey.export({format:'jwk'}),kid:'key1',use:'sig',alg:'RS256'};
 function token(overrides={}){
@@ -108,4 +109,88 @@ test('OIDC code flow binds state, nonce and PKCE before issuing secure session',
   const denied=await fetch(base+'/api/labels/label_0002/reports/streams',{headers:{cookie:session.split(';')[0]}});
   assert.equal(denied.status,403);assert.equal(reportCalls,1);
  }finally{await new Promise(resolve=>server.close(resolve));}
+});
+
+async function withOidc(exchange,fn,overrides={}){
+ const oidc={authorizationEndpoint:'https://id.example/authorize',tokenEndpoint:'https://id.example/token',redirectUri:'https://app.example/auth/callback',clientId:'client-1'};
+ const server=createBff({issuer:'issuer',audience:'dashboard',jwks:{keys:[jwk]},checkMembership:async identity=>identity,
+  engineOrigin:'https://engine.example/',engineToken:'server-secret',reports:{streams:'/v1/labels/{labelId}/reports/streams'},
+  oidc,sessionKey:Buffer.alloc(32,7),fetchImpl:exchange,now:()=>1800000000000,...overrides});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{await fn('http://127.0.0.1:'+server.address().port);}finally{await new Promise(resolve=>server.close(resolve));}
+}
+async function login(base){
+ const response=await fetch(base+'/auth/login',{redirect:'manual'}),url=new URL(response.headers.get('location'));
+ assert.equal(response.headers.get('referrer-policy'),'no-referrer');
+ return {cookie:response.headers.get('set-cookie').split(';')[0],state:url.searchParams.get('state'),nonce:url.searchParams.get('nonce')};
+}
+test('callback rejects missing/duplicate parameters and expired or future pending state before exchange',async()=>{
+ let calls=0;
+ await withOidc(async()=>{calls++;throw new Error('must not exchange');},async base=>{
+  const pending=await login(base);
+  for(const path of ['/auth/callback?code=a','/auth/callback?state='+pending.state,
+   '/auth/callback?code=a&state='+pending.state+'&state='+pending.state,
+   '/auth/callback?code=a&state='+pending.state+'&extra=a']){
+   const r=await fetch(base+path,{headers:{cookie:pending.cookie},redirect:'manual'});assert.equal(r.status,401);
+   assert.ok(r.headers.get('set-cookie').includes('Max-Age=0'));
+  }
+  for(const createdAtMs of [1799999699999,1800000000001]){
+   const value=seal({createdAtMs,state:'state',nonce:'nonce',verifier:'fixture'},Buffer.alloc(32,7));
+   const r=await fetch(base+'/auth/callback?code=a&state=state',{headers:{cookie:'__Host-bff_pending='+value},redirect:'manual'});
+   assert.equal(r.status,401);
+  }
+  assert.equal(calls,0);
+ });
+});
+test('callback rejects wrong nonce, invalid identity, malformed responses and cookie overflow',async()=>{
+ const fixtures=[()=>new Response(JSON.stringify({id_token:token({nonce:'wrong'})}),{headers:{'content-type':'application/json'}}),
+  nonce=>new Response(JSON.stringify({id_token:token({nonce,aud:'other'})}),{headers:{'content-type':'application/json'}}),
+  ()=>new Response('provider secret',{status:503}),()=>new Response('{',{headers:{'content-type':'application/json'}}),
+  ()=>new Response('{}',{headers:{'content-type':'text/html'}}),
+  nonce=>new Response(JSON.stringify({id_token:token({nonce,padding:'x'.repeat(3000)})}),{headers:{'content-type':'application/json'}})];
+ for(const fixture of fixtures){
+  let nonce;
+  await withOidc(async()=>fixture(nonce),async base=>{
+   const pending=await login(base);nonce=pending.nonce;
+   const r=await fetch(base+'/auth/callback?code=a&state='+pending.state,{headers:{cookie:pending.cookie},redirect:'manual'});
+   assert.equal(r.status,401);assert.doesNotMatch(r.headers.get('set-cookie'),/__Host-bff_session=/);
+   assert.doesNotMatch(await r.text(),/provider|secret|id_token/);
+  });
+ }
+});
+test('logout requires a same-origin POST and clears the secure cookie',async()=>{
+ await withOidc(async()=>{throw new Error('unexpected exchange');},async base=>{
+  const get=await fetch(base+'/auth/logout',{redirect:'manual'});assert.equal(get.status,404);
+  for(const headers of [{},{origin:'https://evil.example'},{origin:'https://app.example','sec-fetch-site':'cross-site'}]){
+   const r=await fetch(base+'/auth/logout',{method:'POST',headers,redirect:'manual'});assert.equal(r.status,403);
+   assert.equal(r.headers.get('set-cookie'),null);
+  }
+  const r=await fetch(base+'/auth/logout',{method:'POST',headers:{origin:'https://app.example'},redirect:'manual'});
+  assert.equal(r.status,303);assert.equal(r.headers.get('location'),'/');
+  assert.match(r.headers.get('set-cookie'),/__Host-bff_session=; Path=\/; HttpOnly; Secure; SameSite=Lax; Max-Age=0/);
+ });
+});
+test('duplicate session cookies, tampering and malformed Authorization do not authenticate',async()=>{
+ await withOidc(async()=>{throw new Error('must not reach engine');},async base=>{
+  const value=seal({token:token()},Buffer.alloc(32,7));
+  for(const headers of [{cookie:'__Host-bff_session='+value+'; __Host-bff_session='+value},
+   {cookie:'__Host-bff_session=corrupt'},{cookie:'__Host-bff_session='+value,authorization:'Basic malformed'}]){
+   const r=await fetch(base+'/api/labels/label_0001/reports/streams',{headers});assert.equal(r.status,401);
+  }
+ });
+});
+test('session endpoint exposes only current label roles and no authentication secrets',async()=>{
+ let calls=0;
+ await withServer(async()=>{calls++;throw new Error('must not reach engine');},async base=>{
+  const unauthenticated=await fetch(base+'/api/session');assert.equal(unauthenticated.status,401);
+  const grants=[{labelId:'label_0001',active:true,role:'owner',expiresAtMs:1800000300000},
+   {labelId:'label_0002',active:true,role:'owner',expiresAtMs:1800000300000}];
+  const response=await fetch(base+'/api/session',{headers:{authorization:'Bearer '+token({labelGrants:grants,nonce:'private nonce'})}});
+  assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
+  assert.deepEqual(await response.json(),{subject:'user_001',expiresAtMs:1800000300000,
+   labels:[{labelId:'label_0001',role:'viewer',expiresAtMs:1800000060000}]});
+  assert.equal(calls,0);
+  const query=await fetch(base+'/api/session?labelId=label_0002');assert.equal(query.status,404);
+ },{checkMembership:async(identity,labelId)=>labelId==='label_0001'?{...identity,
+  labelGrants:[{labelId,active:true,role:'viewer',expiresAtMs:1800000060000}]}:null});
 });
