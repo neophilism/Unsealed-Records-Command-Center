@@ -1,5 +1,9 @@
 # URC-08 Stems White Label commerce boundary
 
+The replay guard now checks the latest order revision before accepting a duplicate event. Replaying an earlier paid event after an accepted refund is stale, even if that event was seen before. Observed and synthetic event/order identities are tracked separately. Source projection retains only declared provenance fields; unknown debug/credential fields are discarded. Identifiers are typed strings, partially-refunded status requires a positive refund, and public client errors omit raw provider diagnostics. The client requests no-store caching.
+
+The actual committed test imports now resolve `src/` modules. The prior tree failed with `ERR_MODULE_NOT_FOUND` for `tests/stems-client.mjs` and `tests/stems.mjs`; passing tests must not be manufactured by copying aliases into the tests directory. Eight local tests pass, including paid-event replay after refund and synthetic/observed identity isolation. Remaining software includes streamed response/deadline bounds, bounded revision-history retention, read-only commerce UI and integration tests. No checkout, live refund, entitlement grant or provider account operation has been performed.
+
 The read-only receipt projection validates provider, owning label, order, product, license, status, source revision, and exact minor-unit breakdown of gross, tax, fees, refunds and creator income. It rejects conflicting event replays, older order revisions and active entitlements on refunded or synthetic records. The same-origin client reads `/api/labels/{labelId}/reports/stems` through the authenticated BFF without a provider key and discards old in-flight results after a label switch.
 
 Run `node --test tests/stems-commerce.test.mjs tests/stems-client.test.mjs`. These tests exercise amount reconciliation, replay, label isolation, synthetic receipts and scope switching.

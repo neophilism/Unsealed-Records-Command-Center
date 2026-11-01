@@ -11,7 +11,7 @@ export function createStemsClient({fetchImpl=fetch,now=()=>Date.now()}){
    generation++;const current=generation;controller?.abort();controller=new AbortController();
    try{
     const response=await fetchImpl('/api/labels/'+encodeURIComponent(labelId)+'/reports/stems',
-      {method:'GET',credentials:'same-origin',redirect:'error',signal:controller.signal,headers:{accept:'application/json'}});
+      {method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',signal:controller.signal,headers:{accept:'application/json'}});
     if(!response.ok||!response.headers.get('content-type')?.includes('application/json')) throw new Error('Receipt unavailable');
     const payload=await response.json();
     if(!payload||payload.labelId!==labelId||!Array.isArray(payload.receipts)||payload.receipts.length>100) throw new Error('Receipt unavailable');
@@ -22,7 +22,7 @@ export function createStemsClient({fetchImpl=fetch,now=()=>Date.now()}){
     const result=guard.accept(receipt);
     if(result==='conflict'||result==='stale') throw new Error('Receipt revision conflict');
     return receipt;
-   }catch(error){if(current!==generation) throw new Error('Receipt request superseded');throw error;}
+   }catch(error){if(current!==generation) throw new Error('Receipt request superseded');if(error?.message==='Receipt revision conflict') throw new Error('Receipt revision conflict');throw new Error('Receipt unavailable');}
   },
   cancel(){generation++;controller?.abort();controller=null;}
  });

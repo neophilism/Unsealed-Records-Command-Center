@@ -1,4 +1,5 @@
 const id=/^[A-Za-z0-9_-]{8,128}$/;
+const validId=value=>typeof value==='string'&&id.test(value);
 const money=/^(0|[1-9][0-9]*)$/;
 const fail=()=>{throw new Error('Invalid Stems record');};
 const validMoney=value=>typeof value==='string'&&money.test(value)&&value.length<=100;
@@ -6,37 +7,39 @@ const validMoney=value=>typeof value==='string'&&money.test(value)&&value.length
 export function projectStemsReceipt(row,{requestedLabelId,nowMs=Date.now()}={}){
  if(typeof requestedLabelId!=='string'||!id.test(requestedLabelId)||!row||typeof row!=='object'||Array.isArray(row)||
    row.provider!=='Stems White Label'||row.labelId!==requestedLabelId||
-   !id.test(row.orderId||'')||!id.test(row.productId||'')||!id.test(row.eventId||'')||
+   !validId(row.orderId)||!validId(row.productId)||!validId(row.eventId)||
    !/^[A-Z]{3}$/.test(row.currency||'')||!['paid','partially_refunded','refunded'].includes(row.status)||
-   !['commercial','personal'].includes(row.licenseType)||!id.test(row.licenseId||'')||
+   !['commercial','personal'].includes(row.licenseType)||!validId(row.licenseId)||
    !['active','revoked','pending'].includes(row.entitlementStatus)||
    ![row.grossMinor,row.taxMinor,row.providerFeeMinor,row.platformFeeMinor,row.refundMinor,row.creatorIncomeMinor].every(validMoney)||
    !row.source||row.source.system!=='Stems White Label'||!['live','synthetic'].includes(row.source.kind)||
    !Number.isSafeInteger(row.source.revision)||row.source.revision<0||
    !Number.isSafeInteger(row.source.observedAtMs)||row.source.observedAtMs<0||
-   !Number.isSafeInteger(nowMs)||row.source.observedAtMs>nowMs+30000) return fail();
+   !Number.isSafeInteger(nowMs)||nowMs<0||row.source.observedAtMs>nowMs+30000) return fail();
  const gross=BigInt(row.grossMinor),tax=BigInt(row.taxMinor),providerFee=BigInt(row.providerFeeMinor),
   platformFee=BigInt(row.platformFeeMinor),refund=BigInt(row.refundMinor),income=BigInt(row.creatorIncomeMinor);
  if(tax+providerFee+platformFee+refund>gross||gross-tax-providerFee-platformFee-refund!==income||
    (row.status==='paid'&&refund!==0n)||
    (row.status==='refunded'&&refund===0n)||
+   (row.status==='partially_refunded'&&refund===0n)||
    (row.entitlementStatus==='active'&&(row.status!=='paid'||row.source.kind!=='live'))) return fail();
  return Object.freeze({labelId:row.labelId,orderId:row.orderId,productId:row.productId,eventId:row.eventId,
   currency:row.currency,status:row.status,licenseType:row.licenseType,licenseId:row.licenseId,
   entitlementStatus:row.entitlementStatus,grossMinor:row.grossMinor,taxMinor:row.taxMinor,
   providerFeeMinor:row.providerFeeMinor,platformFeeMinor:row.platformFeeMinor,refundMinor:row.refundMinor,
-  creatorIncomeMinor:row.creatorIncomeMinor,source:Object.freeze({...row.source})});
+  creatorIncomeMinor:row.creatorIncomeMinor,source:Object.freeze({system:row.source.system,kind:row.source.kind,revision:row.source.revision,observedAtMs:row.source.observedAtMs})});
 }
 
 /** Reject replayed conflicting events and source revision regression. */
 export function createStemsReceiptGuard(){
  const events=new Map(),orders=new Map();
  return Object.freeze({accept(receipt){
-  const eventKey=JSON.stringify([receipt.labelId,receipt.eventId]);
+  const eventKey=JSON.stringify([receipt.labelId,receipt.source.kind,receipt.eventId]);
+  const orderKey=JSON.stringify([receipt.labelId,receipt.source.kind,receipt.orderId]);
+  const previous=orders.get(orderKey);
+  if(previous!==undefined&&receipt.source.revision<previous) return 'stale';
   const fingerprint=JSON.stringify(receipt);
   if(events.has(eventKey)) return events.get(eventKey)===fingerprint?'duplicate':'conflict';
-  const orderKey=JSON.stringify([receipt.labelId,receipt.orderId]);
-  const previous=orders.get(orderKey);
   if(previous!==undefined&&receipt.source.revision<=previous) return 'stale';
   events.set(eventKey,fingerprint);orders.set(orderKey,receipt.source.revision);return 'accepted';
  }});

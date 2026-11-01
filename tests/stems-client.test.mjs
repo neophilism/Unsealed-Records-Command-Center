@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {createStemsClient} from './stems-client.mjs';
+import {createStemsClient} from '../src/stems-client.mjs';
 const receipt=(label,revision=1)=>({provider:'Stems White Label',labelId:label,orderId:'order_0001',productId:'product_001',eventId:'event_0001',currency:'USD',status:'paid',licenseType:'commercial',licenseId:'license_001',entitlementStatus:'active',grossMinor:'100',taxMinor:'5',providerFeeMinor:'3',platformFeeMinor:'2',refundMinor:'0',creatorIncomeMinor:'90',source:{system:'Stems White Label',kind:'live',revision,observedAtMs:1000}});
 const json=(label,revision)=>new Response(JSON.stringify({labelId:label,receipts:[receipt(label,revision)]}),{headers:{'content-type':'application/json'}});
 test('read-only same-origin receipt without provider key',async()=>{
