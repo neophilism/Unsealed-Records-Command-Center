@@ -17,3 +17,11 @@ test('wrong label and old in-flight scope are denied',async()=>{
  const old=client.load('label_0001','order_0001');assert.equal((await client.load('label_0002','order_0001')).labelId,'label_0002');
  release();await assert.rejects(old,/superseded/);
 });
+test('client refuses an old active receipt after observing its refunded revision',async()=>{
+ const paid=receipt('label_0001'),refunded={...paid,eventId:'event_0002',status:'partially_refunded',refundMinor:'10',creatorIncomeMinor:'80',entitlementStatus:'revoked',source:{...paid.source,revision:2}};
+ let value=paid;
+ const client=createStemsClient({now:()=>2000,fetchImpl:async()=>new Response(JSON.stringify({labelId:'label_0001',receipts:[value]}),{headers:{'content-type':'application/json'}})});
+ assert.equal((await client.load('label_0001','order_0001')).entitlementStatus,'active');
+ value=refunded;assert.equal((await client.load('label_0001','order_0001')).entitlementStatus,'revoked');
+ value=paid;await assert.rejects(client.load('label_0001','order_0001'),/Receipt revision conflict/);
+});
