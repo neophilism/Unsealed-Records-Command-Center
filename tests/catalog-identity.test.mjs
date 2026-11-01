@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {projectLabelCatalog,createCatalogRevisionGuard,projectLabelRelease,groupAuthorizedCatalog} from './catalog.mjs';
-const valid={labelId:'label_0001',releaseId:'release_001',title:'First Album',releaseDate:'2026-10-18',artworkUrl:'https://art.example/cover.jpg',works:[{workId:'work_0001',title:'Composition'}],tracks:[{trackId:'track_0001',title:'First Song',isrc:'USABC1234567',workIds:['work_0001']}],source:{system:'engine',revision:3,observedAtMs:1000}};
+import {projectLabelCatalog,createCatalogRevisionGuard,projectLabelRelease,groupAuthorizedCatalog} from '../src/catalog-identity.mjs';
+const valid={labelId:'label_0001',releaseId:'release_001',title:'First Album',releaseDate:'2026-10-18',artworkUrl:'https://art.example/cover.jpg',works:[{workId:'work_0001',title:'Composition'}],tracks:[{trackId:'track_0001',title:'First Song',isrc:'USABC1234567',workIds:['work_0001']}],source:{system:'engine',status:'cached',revision:3,observedAtMs:1000}};
 const options={requestedLabelId:'label_0001',expectedSource:'engine',artworkHosts:['art.example'],nowMs:2000};
 test('projects requested label catalog with track ISRC and source provenance',()=>{
  const result=projectLabelCatalog(valid,options);assert.equal(result.tracks[0].isrc,'USABC1234567');assert.deepEqual(result.tracks[0].workIds,['work_0001']);assert.equal(result.source.revision,3);assert.ok(Object.isFrozen(result.tracks));
@@ -40,4 +40,13 @@ test('legacy release projection still validates flags and ISRC',()=>{
  const old={labelId:'label_0001',releaseId:'release_001',title:'Old',isrc:'USABC1234567',labelVerified:true,sourceVerified:true};
  assert.equal(projectLabelRelease(old).isrc,'USABC1234567');
  assert.throws(()=>projectLabelRelease({...old,labelVerified:false}));
+});
+test('typed identifiers, nested ownership, source state, finite clock and artwork ports are enforced',()=>{
+ for(const patch of [{releaseId:12345678},{works:[{...valid.works[0],workId:12345678}]},
+  {works:[{...valid.works[0],labelId:'label_0002'}]},
+  {tracks:[{...valid.tracks[0],labelId:'label_0002'}]},
+  {source:{...valid.source,status:undefined}},{source:{...valid.source,status:'unknown'}},
+  {artworkUrl:'https://art.example:444/cover.jpg'}]) assert.throws(()=>projectLabelCatalog({...valid,...patch},options));
+ assert.throws(()=>projectLabelCatalog(valid,{...options,nowMs:NaN}));
+ assert.equal(projectLabelCatalog({...valid,source:{...valid.source,status:'synthetic'}},options).source.status,'synthetic');
 });
