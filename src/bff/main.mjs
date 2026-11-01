@@ -1,8 +1,11 @@
 import {createBff} from './server.mjs';
+import {fileMembership} from './membership.mjs';
 
 function required(name){const value=process.env[name];if(!value) throw new Error('Missing '+name);return value;}
+const issuer=required('BFF_ISSUER');
 const server=createBff({
- issuer:required('BFF_ISSUER'),audience:required('BFF_AUDIENCE'),
+ checkMembership:fileMembership({path:required('BFF_MEMBERSHIP_FILE'),issuer}),
+ issuer,audience:required('BFF_AUDIENCE'),
  jwks:JSON.parse(required('BFF_JWKS_JSON')),
  engineOrigin:required('ENGINE_ORIGIN'),engineToken:required('ENGINE_TOKEN'),
  reports:JSON.parse(required('BFF_REPORT_ROUTES_JSON'))

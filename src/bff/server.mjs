@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {readJson} from './response.mjs';
 import {verifyIdentity} from './identity.mjs';
 import {permitLabelRequest,publicBffFailure} from './access.mjs';
 import {cookie,cookieValue,oidcLogin,seal,unseal,validOidcConfig} from './oidc.mjs';
@@ -10,11 +11,16 @@ function safeNumbers(value){
  if(value&&typeof value==='object') return Object.values(value).every(safeNumbers);
  return true;
 }
-export function createBff({issuer,audience,jwks,engineOrigin,engineToken,reports,oidc,sessionKey,fetchImpl=fetch,now=()=>Date.now()}) {
+export function createBff({issuer,audience,jwks,engineOrigin,engineToken,reports,oidc,sessionKey,checkMembership=async()=>null,fetchImpl=fetch,now=()=>Date.now()}) {
   if(!issuer||!audience||!jwks?.keys||!engineToken||!engineOrigin||!reports) throw new Error('Missing server configuration');
   const origin=new URL(engineOrigin);
   if(origin.protocol!=='https:'||origin.username||origin.password||origin.search||origin.hash||origin.pathname!=='/') throw new Error('Invalid engine origin');
   if(oidc&&(!validOidcConfig(oidc)||!Buffer.isBuffer(sessionKey)||sessionKey.length!==32)) throw new Error('Invalid OIDC configuration');
+  const authorize=async(identity,labelId)=>{
+    try {const current=await checkMembership(identity,labelId,now());
+      return current?.subject===identity?.subject&&permitLabelRequest(current,labelId,now())?current:null;
+    }catch{return null;}
+  };
   return http.createServer(async(req,res)=>{
     if(req.method!=='GET'||typeof req.url!=='string'||req.url.length>2048) return send(res,404,publicBffFailure());
     let url;try{url=new URL(req.url,'http://localhost');}catch{return send(res,404,publicBffFailure());}
@@ -31,11 +37,10 @@ export function createBff({issuer,audience,jwks,engineOrigin,engineToken,reports
         now()<pending.createdAtMs||url.searchParams.size!==2||
         url.searchParams.get('state')!==pending.state||!url.searchParams.get('code')) return send(res,401,publicBffFailure());
       try{
-        const response=await fetchImpl(oidc.tokenEndpoint,{method:'POST',redirect:'error',signal:AbortSignal.timeout(8000),headers:{'content-type':'application/x-www-form-urlencoded','accept':'application/json'},body:new URLSearchParams({grant_type:'authorization_code',code:url.searchParams.get('code'),client_id:oidc.clientId,redirect_uri:oidc.redirectUri,code_verifier:pending.verifier})});
-        if(!response.ok) return send(res,401,publicBffFailure());
-        if(!response.headers.get('content-type')?.includes('application/json')) return send(res,401,publicBffFailure());
-        const raw=await response.text();if(raw.length>20000) return send(res,401,publicBffFailure());
-        const body=JSON.parse(raw);
+        const signal=AbortSignal.timeout(8000);
+        const response=await fetchImpl(oidc.tokenEndpoint,{method:'POST',redirect:'error',signal,headers:{'content-type':'application/x-www-form-urlencoded','accept':'application/json'},body:new URLSearchParams({grant_type:'authorization_code',code:url.searchParams.get('code'),client_id:oidc.clientId,redirect_uri:oidc.redirectUri,code_verifier:pending.verifier})});
+        if(!response.ok){await response.body?.cancel();return send(res,401,publicBffFailure());}
+        const body=await readJson(response,{maxBytes:20000,signal});
         const identity=verifyIdentity(body.id_token,{issuer,audience,jwks,nowMs:now()});
         if(!identity||identity.nonce!==pending.nonce) return send(res,401,publicBffFailure());
         res.setHeader('set-cookie',[cookie('__Host-bff_pending','',0),cookie('__Host-bff_session',seal({token:body.id_token},sessionKey),Math.min(300,Math.floor((identity.expiresAtMs-now())/1000)))]);
@@ -54,18 +59,18 @@ export function createBff({issuer,audience,jwks,engineOrigin,engineToken,reports
     if(!token) return send(res,401,publicBffFailure());
     const context=verifyIdentity(token,{issuer,audience,jwks,nowMs:now()});
     if(!permitLabelRequest(context,route[1],now())) return send(res,403,publicBffFailure());
+    if(!await authorize(context,route[1])) return send(res,403,publicBffFailure());
     const template=reports[route[2]];
     if(typeof template!=='string'||!/^\/v1\/labels\/\{labelId\}\/[A-Za-z0-9_/-]+$/.test(template)) return send(res,503,publicBffFailure());
     const target=new URL(template.replace('{labelId}',encodeURIComponent(route[1])),origin);
     if(target.origin!==origin.origin) return send(res,503,publicBffFailure());
     try {
-      const response=await fetchImpl(target,{method:'GET',redirect:'error',signal:AbortSignal.timeout(8000),headers:{authorization:'Bearer '+engineToken,accept:'application/json'}});
-      if(!response.ok||!response.headers.get('content-type')?.includes('application/json')) return send(res,502,publicBffFailure());
-      const raw=await response.text();
-      if(raw.length>1_000_000) return send(res,502,publicBffFailure());
-      const data=JSON.parse(raw);
+      const signal=AbortSignal.timeout(8000);
+      const response=await fetchImpl(target,{method:'GET',redirect:'error',signal,headers:{authorization:'Bearer '+engineToken,accept:'application/json'}});
+      if(!response.ok){await response.body?.cancel();return send(res,502,publicBffFailure());}
+      const data=await readJson(response,{maxBytes:1_000_000,signal});
       if(!data||typeof data!=='object'||Array.isArray(data)||data.labelId!==route[1]||!safeNumbers(data)||
-        !permitLabelRequest(context,route[1],now())) return send(res,502,publicBffFailure());
+        !permitLabelRequest(context,route[1],now())||!await authorize(context,route[1])) return send(res,502,publicBffFailure());
       return send(res,200,data);
     }catch{return send(res,502,publicBffFailure());}
   });
