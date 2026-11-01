@@ -1,0 +1,8 @@
+**
+!src/
+!src/bff/
+!src/bff/*.mjs
+!Dockerfile
+!scripts/
+!scripts/production-config.mjs
+!scripts/start-production.mjs
