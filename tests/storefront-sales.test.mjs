@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {projectSalesEvent,summarizeSalesEvents,projectStorefrontSale} from './sales.mjs';
+import {projectSalesEvent,summarizeSalesEvents,projectStorefrontSale} from '../src/storefront-sales.mjs';
 const base={labelId:'label_0001',eventId:'event_0001',orderId:'order_0001',storefront:'bandcamp',country:'US',currency:'USD',period:'2026-10',kind:'sale',settlement:'settled',amountMinor:'9007199254740993',source:{system:'engine',kind:'live',revision:1,observedAtMs:1000}};
 const options={requestedLabelId:'label_0001',expectedSource:'engine',nowMs:2000};
 const event=(eventId,kind,amountMinor,settlement='settled')=>({...base,eventId,kind,amountMinor,settlement});
@@ -36,4 +36,21 @@ test('synthetic sales stay explicitly synthetic',()=>{
 test('legacy minor-unit projection remains compatible',()=>{
  const row={labelAuthorized:true,sourceVerified:true,labelId:'label_0001',currency:'USD',amountMinor:'9007199254740993',orderCount:'2',period:'2026-10'};
  assert.equal(projectStorefrontSale(row).amountMinor,row.amountMinor);
+});
+test('zero-priced observed orders are distinct from missing data',()=>{
+ const result=summarizeSalesEvents([{...base,amountMinor:'0'}],options);
+ assert.equal(result.availability,'observed');assert.equal(result.currencies[0].grossMinor,'0');assert.equal(result.currencies[0].orderCount,'1');
+});
+test('synthetic events and colliding ids never overwrite or aggregate observed balances',()=>{
+ const fake={...base,amountMinor:'100',source:{...base.source,kind:'synthetic',revision:99}};
+ const result=summarizeSalesEvents([base,fake],options);
+ assert.equal(result.availability,'mixed');assert.deepEqual(result.currencies,[]);
+ assert.equal(result.sourceSummaries.find(s=>s.kind==='live').currencies[0].grossMinor,base.amountMinor);
+ assert.equal(result.sourceSummaries.find(s=>s.kind==='synthetic').currencies[0].grossMinor,'100');
+});
+test('malformed typed ids, empty policy and contradictory event identity fail',()=>{
+ for(const patch of [{eventId:12345678},{orderId:12345678},{currency:['USD']},{country:['US']}])
+  assert.throws(()=>projectSalesEvent({...base,...patch},options));
+ assert.throws(()=>summarizeSalesEvents([],{...options,requestedLabelId:'bad'}));
+ assert.throws(()=>summarizeSalesEvents([base,{...base,kind:'refund',source:{...base.source,revision:2}}],options));
 });
